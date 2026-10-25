@@ -1,5 +1,5 @@
 import fractionalIndex from "fractional-index";
-import { find, findIndex, isNil, keyBy, remove, uniq } from "es-toolkit/compat";
+import { find, findIndex, isNil, remove, uniq } from "es-toolkit/compat";
 import type {
   Identifier,
   Transaction,
@@ -1020,18 +1020,21 @@ class Collection extends ParanoidModel<
     ).reverse();
 
     if (childDocumentIds.length) {
-      const childDocuments = await Document.findAll({
-        transaction,
-        where: {
-          id: childDocumentIds,
+      // A bulk update rather than a destroy per document, so `deletedById` is
+      // written here instead of by the hook on ParanoidModel.
+      await Document.update(
+        {
+          lastModifiedById: ctx.context.auth.user.id,
+          deletedById: ctx.context.auth.user.id,
+          deletedAt: new Date(),
         },
-      });
-      const childDocumentsById = keyBy(childDocuments, (child) => child.id);
-
-      // Destroyed one at a time to ensure model hooks run for each document.
-      for (const childDocumentId of childDocumentIds) {
-        await childDocumentsById[childDocumentId]?.destroy(ctx.context);
-      }
+        {
+          transaction,
+          where: {
+            id: childDocumentIds,
+          },
+        }
+      );
     }
 
     await document.destroy(ctx.context);
