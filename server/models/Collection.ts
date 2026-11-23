@@ -451,7 +451,7 @@ class Collection extends ParanoidModel<
 
   @BeforeCreate
   static async setIndex(model: Collection, options: CreateOptions<Collection>) {
-    if (model.index) {
+    if (model.index != null) {
       model.index = await removeIndexCollision(model.teamId, model.index, {
         transaction: options.transaction,
       });
@@ -523,7 +523,7 @@ class Collection extends ParanoidModel<
     options: UpdateOptions<Collection>
   ) {
     if (
-      (model.index && model.changed("index")) ||
+      (model.index != null && model.changed("index")) ||
       (!model.archivedAt && model.changed("archivedAt"))
     ) {
       model.index = await removeIndexCollision(model.teamId, model.index!, {
